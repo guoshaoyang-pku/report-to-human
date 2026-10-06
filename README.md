@@ -32,22 +32,32 @@ Full rule profile: [`references/asd-ste100-80.md`](references/asd-ste100-80.md).
 
 ## Install
 
-Any agent that loads skills (Claude Code, Codex, Verdent, ...):
+Easiest: paste this sentence to Codex or Claude Code / 把这句话发给 Codex 或 Claude Code：
+
+> 帮我安装这个 skill：github.com/guoshaoyang-pku/report-to-human
+
+**For the agent doing the install:** clone this repo into the skills directory of the host, keeping the folder name `report-to-human`, then tell the user to start a new session.
+
+| Host | Skills directory |
+| --- | --- |
+| Claude Code | `~/.claude/skills/report-to-human` |
+| Codex | `$CODEX_HOME/skills/report-to-human` (default `~/.codex/skills/report-to-human`) |
+| Other skill-loading agents | that agent's skills directory |
+
+Manual install:
 
 ```bash
-# via the skills CLI
-npx skills add guoshaoyang-pku/report-to-human
-
-# or clone into your skills directory
-git clone https://github.com/guoshaoyang-pku/report-to-human ~/.claude/skills/report-to-human
+git clone https://github.com/guoshaoyang-pku/report-to-human ~/.claude/skills/report-to-human   # Claude Code
+git clone https://github.com/guoshaoyang-pku/report-to-human ~/.codex/skills/report-to-human    # Codex
 ```
 
-Then just say: **"report to human"** / **"跟我汇报"** / "brief me on this run in 4 layers".
+Then just say: **"跟我汇报"** / **"report to human"** / "brief me on this run in 4 layers".
 
 ## Repo layout
 
 ```
-SKILL.md                              # the protocol (what agents load)
+SKILL.md                              # the protocol, Chinese edition (what agents load)
+docs/SKILL.en.md                      # the protocol, English edition
 references/asd-ste100-80.md           # 80% rule profile + open-source survey
 references/domain-example-rl-trial.md # worked example: RL training-run analysis
 scripts/plot_run_metrics.py           # reward/seqlen/clip figures from any log_history.json
@@ -55,7 +65,7 @@ scripts/plot_run_metrics.py           # reward/seqlen/clip figures from any log_
 
 ## Reader language
 
-The protocol is language-agnostic: write artifacts in the reader's language, keep technical terms in English, apply the same sentence discipline anywhere. (Author's default: 中文汇报，术语保留英文。)
+`SKILL.md` is the Chinese edition: reports default to Chinese, technical terms stay in English, and the agent switches to the user's language when the user writes in another one. For an English-first install, copy `docs/SKILL.en.md` over `SKILL.md`. Both editions apply the same sentence discipline.
 
 ---
 
