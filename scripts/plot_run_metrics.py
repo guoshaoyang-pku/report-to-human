@@ -5,17 +5,19 @@ Usage:
   python plot_run_metrics.py --log-history log_history.json \
       --out-dir docs/reports/figs --prefix myrun \
       --eval "61:0.33" "91:0.32" "144:0.47"        # optional held-out probes
-      --title "my_trial_cap8k"
 
-Produces <prefix>_reward.png, <prefix>_seqlen.png, <prefix>_clip.png.
-Requires matplotlib; no other deps.
+Writes <prefix>_reward / _seqlen / _clip as .svg (for the panel) and .png (2x).
+Figures carry no title: the panel heading states the finding. Style: panel_style.py.
+Requires matplotlib only.
 """
 import argparse
 import json
 import os
+import sys
 
-import matplotlib
-matplotlib.use("Agg")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from panel_style import C, FIG_HALF, FIG_WIDE, apply, save  # noqa: E402
+
 import matplotlib.pyplot as plt  # noqa: E402
 
 
@@ -32,10 +34,10 @@ def main():
     ap.add_argument("--log-history", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--prefix", default="run")
-    ap.add_argument("--title", default="")
     ap.add_argument("--eval", nargs="*", default=[],
                     help="held-out probes as step:acc, e.g. 61:0.33 144:0.47")
     a = ap.parse_args()
+    apply()
 
     H = json.load(open(a.log_history))
     rows = [d for d in H if "reward" in d and "completions/mean_length" in d]
@@ -49,51 +51,63 @@ def main():
     kl = [d.get("kl", 0) for d in rows]
     evals = [tuple(x.split(":")) for x in a.eval]
     os.makedirs(a.out_dir, exist_ok=True)
-    T = a.title or a.prefix
+    stem = lambda name: os.path.join(a.out_dir, f"{a.prefix}_{name}")
 
-    # --- reward + held-out
-    fig, ax = plt.subplots(figsize=(8, 4.2), dpi=150)
-    ax.plot(step, rew, color="#9ecae1", lw=0.8, label="reward / step")
-    ax.plot(step, roll(rew), color="#1f77b4", lw=1.8, label="reward (roll-10)")
-    ax.axhline(0, color="#999", lw=0.6, ls=":")
+    # reward + held-out probes
+    fig, ax = plt.subplots(figsize=FIG_WIDE)
+    ax.plot(step, rew, color=C["soft"], lw=0.8, label="每步 reward")
+    ax.plot(step, roll(rew), color=C["orange"], label="reward（10 步滑动平均）")
+    ax.axhline(0, color=C["mid"], lw=0.6, ls=":")
     for s, acc in evals:
-        ax.scatter([int(s)], [float(acc)], marker="*", s=90, color="#d62728", zorder=5)
-        ax.annotate(f"held-out acc {float(acc):.2f}", (int(s), float(acc)),
-                    textcoords="offset points", xytext=(6, 8), fontsize=8, color="#d62728")
-    ax.set_xlabel("step"); ax.set_ylabel("reward"); ax.set_title(f"{T} — training reward + held-out probes")
-    ax.legend(loc="lower right", fontsize=8); fig.tight_layout()
-    fig.savefig(os.path.join(a.out_dir, f"{a.prefix}_reward.png")); plt.close(fig)
+        ax.scatter([int(s)], [float(acc)], marker="o", s=28, color=C["blue"], zorder=5)
+        ax.annotate(f"独立测试 {float(acc):.2f}", (int(s), float(acc)),
+                    textcoords="offset points", xytext=(6, 6), fontsize=8, color=C["blue"])
+    ax.set_xlabel("step")
+    ax.set_ylabel("reward")
+    ax.legend(loc="lower right")
+    save(fig, stem("reward"))
 
-    # --- seqlen (log) + truncation
-    fig, ax = plt.subplots(figsize=(8, 4.2), dpi=150)
-    ax.plot(step, meanlen, color="#9467bd", lw=1.2, label="completions/mean_length")
+    # completion length (log) + truncation ratio
+    fig, ax = plt.subplots(figsize=FIG_WIDE)
+    ax.plot(step, meanlen, color=C["orange"], label="回答长度均值")
     ax.set_yscale("log")
-    ax.set_xlabel("step"); ax.set_ylabel("mean completion tokens (log)")
+    ax.set_xlabel("step")
+    ax.set_ylabel("回答长度（token，对数轴）")
     ax2 = ax.twinx()
-    ax2.plot(step, trunc, color="#d62728", lw=1.0, alpha=0.8, label="truncated ratio")
-    ax2.set_ylabel("truncated ratio", color="#d62728"); ax2.tick_params(axis="y", colors="#d62728")
+    ax2.plot(step, trunc, color=C["blue"], lw=1.2, label="截断比例")
+    ax2.set_ylabel("截断比例", color=C["blue"])
+    ax2.tick_params(axis="y", colors=C["blue"])
     ax2.set_ylim(0, 1)
-    ax.set_title(f"{T} — completion length vs cap + truncation penalty")
-    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, loc="upper right", fontsize=8)
-    fig.tight_layout(); fig.savefig(os.path.join(a.out_dir, f"{a.prefix}_seqlen.png")); plt.close(fig)
+    ax2.grid(False)
+    ax2.spines["right"].set_visible(True)
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, loc="upper right")
+    save(fig, stem("seqlen"))
 
-    # --- clip ratios + entropy/kl
-    fig, axes = plt.subplots(1, 2, figsize=(10, 3.8), dpi=150)
+    # clip ratios | entropy + KL
+    fig, axes = plt.subplots(1, 2, figsize=(FIG_HALF[0] * 2, FIG_HALF[1]))
     ax = axes[0]
-    ax.plot(step, low, color="#1f77b4", lw=1.1, label="clip_ratio/low_mean")
-    ax.plot(step, high, color="#ff7f0e", lw=1.1, label="clip_ratio/high_mean")
-    ax.set_xlabel("step"); ax.set_ylabel("fraction"); ax.set_yscale("log")
-    ax.legend(fontsize=8); ax.set_title(f"{T} — sequence clip ratios")
+    ax.plot(step, low, color=C["blue"], lw=1.2, label="clip ratio（下界）")
+    ax.plot(step, high, color=C["orange"], lw=1.2, label="clip ratio（上界）")
+    ax.set_xlabel("step")
+    ax.set_ylabel("比例（对数轴）")
+    ax.set_yscale("log")
+    ax.legend()
     ax = axes[1]
-    ax.plot(step, ent, color="#2ca02c", lw=1.1, label="entropy")
-    ax.set_xlabel("step"); ax.set_ylabel("entropy", color="#2ca02c")
+    ax.plot(step, ent, color=C["green"], lw=1.2, label="entropy")
+    ax.set_xlabel("step")
+    ax.set_ylabel("entropy", color=C["green"])
     ax2 = ax.twinx()
-    ax2.plot(step, kl, color="#888", lw=1.0, ls="--", label="kl")
-    ax2.set_ylabel("kl", color="#888")
-    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, fontsize=8); ax.set_title(f"{T} — entropy / KL")
-    fig.tight_layout(); fig.savefig(os.path.join(a.out_dir, f"{a.prefix}_clip.png")); plt.close(fig)
+    ax2.plot(step, kl, color=C["mid"], lw=1.0, ls="--", label="KL")
+    ax2.set_ylabel("KL", color=C["muted"])
+    ax2.grid(False)
+    ax2.spines["right"].set_visible(True)
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2)
+    fig.tight_layout()
+    save(fig, stem("clip"))
     print("figures written:", a.prefix, "->", a.out_dir)
 
 
