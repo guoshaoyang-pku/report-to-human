@@ -47,8 +47,9 @@ Easiest: paste this sentence to Codex or Claude Code / 把这句话发给 Codex 
 Manual install:
 
 ```bash
-git clone https://github.com/guoshaoyang-pku/report-to-human ~/.claude/skills/report-to-human   # Claude Code
-git clone https://github.com/guoshaoyang-pku/report-to-human ~/.codex/skills/report-to-human    # Codex
+npx skills add guoshaoyang-pku/report-to-human    # project-level, any skills-CLI host (Codex, Claude Code, ...)
+git clone https://github.com/guoshaoyang-pku/report-to-human ~/.claude/skills/report-to-human   # Claude Code, global
+git clone https://github.com/guoshaoyang-pku/report-to-human ~/.codex/skills/report-to-human    # Codex, global
 ```
 
 Then just say: **"跟我汇报"** / **"report to human"** / "brief me on this run in 4 layers".
