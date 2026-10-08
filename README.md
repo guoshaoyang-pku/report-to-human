@@ -1,8 +1,12 @@
-# report-to-human
+# report-to-human · skill 整合包
 
-**让 AI 说人话。**
+三个 skill，一次装齐。都给中文用户：让 agent 的产出人能读、论文能写、报告能上线。
 
-agent 向人汇报的四层协议：正文用航空维修手册的语言写，配置用一行图标交代，细节放进交互面板，聊天框只留一句话结论和链接。
+| skill | 干什么 |
+| --- | --- |
+| **report-to-human** | 向人汇报的 4 层协议：STE 散文、图标化配置、HTML panel、聊天框只留结论。带 panel 模板、统一绘图风格、交付前自检脚本 |
+| **research-skills** | Orchestra 论文写作库（12.7k stars）的路由器：写论文、画图、talk、ideation、英文去 AI 味清单。按需拉子 skill，不预载八十个 |
+| **blog-deploy** | 把 `docs/` 的单文件产物发布到 GitHub Pages 个人主页；验证 HTTP 200 才算完成 |
 
 <p align="center">
   <img src="assets/xhs-cover.jpg" width="31%" alt="封面：让 AI 说人话">
@@ -14,47 +18,37 @@ agent 向人汇报的四层协议：正文用航空维修手册的语言写，�
 
 把这句话发给 Codex 或 Claude Code：
 
-> 帮我安装这个 skill：github.com/guoshaoyang-pku/report-to-human
+> 帮我安装这个仓库里的 skills：github.com/guoshaoyang-pku/report-to-human
 
-**给执行安装的 agent**：把本仓库 clone 到宿主的 skills 目录，文件夹名保持 `report-to-human`，然后让用户开新会话。
+**给执行安装的 agent**：clone 本仓库，把 `skills/` 下需要的目录复制到宿主的 skills 目录（文件夹名不变），然后让用户开新会话。
 
 | 工具 | 目录 |
 | --- | --- |
-| Claude Code | `~/.claude/skills/report-to-human` |
-| Codex | `~/.codex/skills/report-to-human` |
+| Claude Code | `~/.claude/skills/` |
+| Codex | `~/.codex/skills/` |
 
-装好之后，对 agent 说 **"跟我汇报"**。
+装好之后说 **"跟我汇报"**、**"写论文"** 或 **"把这个报告发布上线"**。
 
-## 四层
+## 刻意没有做成 skill 的
 
-| 层 | 承载 | 规则 |
-| --- | --- | --- |
-| L1 文字 | 报告正文 | ASD-STE100 的 80% 严格性：短句、一个概念一个名字、主动语态、数字和限定词不丢 |
-| L2 图标 | 配置与结构 | 一行 badge；结构用图；曲线出图 |
-| L3 panel | 主阅读面 | 单文件 HTML：结论当标题、一节一图、样本浏览器 |
-| L4 聊天框 | 入口 | 名称 + 一句话结论 + panel 链接 + 报告链接 |
+- **arxiv 检索**：偶发查询用网页搜索就够，单独 skill 只加触发词不加能力。
+- **PowerPoint / plan**：宿主 agent 自带。
+- **research-paper-writing**：与 research-skills 里的 ml-paper-writing 路由重复，该名字的请求直接落路由器。
+- **humanizer**：清单浓缩进 `skills/research-skills/references/de-ai-prose.md`，不单独注册。
+- **sketch / claude-design**：已有设计类 skill 覆盖（design-then-build、frontend-slides、frontend-design）。
 
-## v2 三条硬规则
-
-1. **极简**：副标题、KPI 卡、节编号、PID 与状态行、"查看 Markdown"按钮默认删除。首屏只有标题、一句话结论、settings 行。
-2. **术语先解释后使用**：项目代号、run 名、公式符号在第一次出现的同一句里用平实的话解释。首屏不出现未解释的词。
-3. **统一外观**：panel 从 `assets/panel-template.html` 改起（Anthropic 配色与字体），HTML 里用单色线性图标，图用同一套风格。
-
-交付前用 `scripts/panel_audit.py <panel.html>` 自检前两条。
+整合包保持三个 skill：注册项越多，触发越容易互相打扰。
 
 ## 仓库
 
 ```
-SKILL.md                    # 协议（agent 读的部分，中文）
-docs/SKILL.en.md            # 协议英文版
-assets/panel-template.html  # 极简 panel 模板
-scripts/panel_audit.py      # 交付前自检：多余元素 + 未解释术语
-scripts/panel_style.py      # 统一绘图风格
-scripts/plot_run_metrics.py # 读任何 log_history.json 出 reward/seqlen/clip 图
-references/                 # STE 80% 规则调研 + RL trial 分析示例
+skills/report-to-human/    # 4 层汇报协议（中文 SKILL + 英文 docs/SKILL.en.md + 模板 + 自检）
+skills/research-skills/    # 论文库路由器 + 英文去 AI 味清单
+skills/blog-deploy/        # GitHub Pages 发布与 200 验证
+assets/                    # 本页三张展示卡
 ```
 
 ## 其它
 
-- 出处：[Karpathy 2026-10-02 的输出阶梯](https://x.com/karpathy/status/2105819303471976479)；L1 依据 [ASD-STE100 Issue 9](https://www.asd-ste100.org/)；panel 配色来自 [Anthropic brand-guidelines](https://github.com/anthropics/skills)；绘图规则取自 [Orchestra academic-plotting](https://github.com/Orchestra-Research/AI-Research-SKILLs)。
+- 出处：[Karpathy 2026-10-02 的输出阶梯](https://x.com/karpathy/status/2105819303471976479)；L1 依据 [ASD-STE100 Issue 9](https://www.asd-ste100.org/)；panel 配色来自 [Anthropic brand-guidelines](https://github.com/anthropics/skills)；绘图规则取自 [Orchestra academic-plotting](https://github.com/Orchestra-Research/AI-Research-SKILLs)；去 AI 味清单浓缩自 [blader/humanizer](https://github.com/blader/humanizer)（MIT）。
 - MIT，见 [LICENSE](LICENSE)。

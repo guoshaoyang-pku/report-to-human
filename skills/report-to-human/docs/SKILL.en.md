@@ -83,6 +83,7 @@ Rules:
 - If the project already has a dashboard, use it and link to it.
 - Otherwise copy `assets/panel-template.html`: single file, data inlined, no build step, no external dependencies. Store it next to the report and open it in a browser preview.
 - Structure: first screen (title, one-sentence conclusion, settings row) → per section one finding-sentence h2 + one paragraph + one figure → a sample browser when relevant → detail numbers folded into `<details>` → one footer line with the source.
+- To put it online: use the blog-deploy skill from this collection to sync the panel to your GitHub Pages site; the live URL goes into the L4 chat message.
 
 ### L4 — Chat box: entry point only
 
